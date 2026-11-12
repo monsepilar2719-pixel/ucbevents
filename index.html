@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>UCB Events</title>
+  <meta name="theme-color" content="#1c1c1e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icono-192.png">
+  <link rel="apple-touch-icon" href="icono-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="lib/leaflet.css">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <div id="mapa"></div>
+
+  <aside id="panel">
+    <header>
+      <div>
+        <h1>UCB Events</h1>
+        <small>¿Dónde es el evento? · Campus La Paz</small>
+      </div>
+      <label class="rol">Entrar como
+        <select id="sel-rol">
+          <option value="visitante">Visitante</option>
+          <option value="estudiante">Estudiante</option>
+          <option value="organizador">Organizador</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </label>
+    </header>
+    <div id="perfil" class="ev-meta"></div>
+    <button id="btn-instalar" class="sec oculto" type="button">📲 Instalar como app</button>
+
+    <nav class="tabs">
+      <button class="tab activa" data-tab="ruta" type="button">Ruta</button>
+      <button class="tab" data-tab="eventos" type="button">Eventos</button>
+      <button class="tab" data-tab="horario" type="button">Mi horario</button>
+      <button class="tab" data-tab="avisos" type="button">Avisos <span id="badge-avisos" class="num"></span></button>
+      <button class="tab oculto" id="tab-admin" data-tab="admin" type="button">Admin</button>
+    </nav>
+
+    <!-- ============ RUTA ============ -->
+    <section id="vista-ruta" class="vista">
+      <div class="bloque">
+        <label>Estoy en <select id="sel-desde"></select></label>
+        <button id="btn-gps" class="sec" type="button">📍 Usar mi ubicación</button>
+        <label>Quiero ir a <select id="sel-hasta"></select></label>
+        <div class="modos" role="radiogroup" aria-label="Tipo de ruta">
+          <label><input type="radio" name="modo" value="corta" checked> 🚶 Más corta</label>
+          <label><input type="radio" name="modo" value="accesible"> ♿ Sin gradas</label>
+          <label><input type="radio" name="modo" value="techo"> ☂️ Bajo techo</label>
+        </div>
+        <button id="btn-ruta" type="button">Cómo llegar</button>
+        <button id="btn-bano" class="sec" type="button">🚻 Baño más cercano</button>
+        <label class="check"><input type="checkbox" id="chk-accesible"> ♿ Usar siempre rutas sin gradas</label>
+      </div>
+      <div id="resultado" class="bloque oculto" aria-live="polite"></div>
+      <button id="btn-compartir" class="sec" type="button">Compartir esta ruta</button>
+      <div class="leyenda">
+        <i class="l camino"></i>camino <i class="l rampa"></i>rampa
+        <i class="l escalera"></i>gradas <i class="l ascensor"></i>ascensor 🚻 baño
+      </div>
+    </section>
+
+    <!-- ============ EVENTOS ============ -->
+    <section id="vista-eventos" class="vista oculto">
+      <div id="form-evento" class="bloque oculto">
+        <h2>Publicar evento</h2>
+        <input id="ev-nombre" placeholder="Nombre del evento" maxlength="80">
+        <input id="ev-inicio" type="datetime-local">
+        <select id="ev-lugar"></select>
+        <input id="ev-capacidad" type="number" min="1" placeholder="Capacidad (personas)">
+        <button id="btn-crear" type="button">Publicar</button>
+      </div>
+      <ul id="lista-eventos" class="lista"></ul>
+    </section>
+
+    <!-- ============ MI HORARIO ============ -->
+    <section id="vista-horario" class="vista oculto">
+      <div id="horario-sin-cuenta" class="aviso info">Entra como <b>Estudiante</b> para cargar tu horario de clases.</div>
+      <div id="horario-contenido">
+        <div id="proxima-clase"></div>
+        <div class="bloque">
+          <h2>Importar horario</h2>
+          <p class="ev-meta">Desde Google Calendar: Configuración → Importar y exportar → Exportar, y sube el archivo <b>.ics</b>. La app reconoce el aula escrita en cada clase (por ejemplo "Aula C-201").</p>
+          <input type="file" id="archivo-ics" accept=".ics,text/calendar">
+          <a class="ev-meta" href="horario_ejemplo.ics" download>Descargar horario de ejemplo</a>
+        </div>
+        <details class="bloque">
+          <summary><b>Agregar clase a mano</b></summary>
+          <input id="cl-materia" placeholder="Materia" maxlength="60">
+          <div class="dias">
+            <label><input type="checkbox" class="cl-dia" value="1">Lun</label><label><input type="checkbox" class="cl-dia" value="2">Mar</label>
+            <label><input type="checkbox" class="cl-dia" value="3">Mié</label><label><input type="checkbox" class="cl-dia" value="4">Jue</label>
+            <label><input type="checkbox" class="cl-dia" value="5">Vie</label><label><input type="checkbox" class="cl-dia" value="6">Sáb</label>
+          </div>
+          <div class="fila"><input id="cl-inicio" type="time" value="08:15"><input id="cl-fin" type="time" value="09:45"></div>
+          <select id="cl-aula"></select>
+          <button id="btn-agregar-clase" type="button">Agregar clase</button>
+        </details>
+        <ul id="lista-clases" class="lista"></ul>
+        <button id="btn-borrar-horario" class="sec chico" type="button">Quitar todo el horario</button>
+      </div>
+    </section>
+
+    <!-- ============ AVISOS ============ -->
+    <section id="vista-avisos" class="vista oculto">
+      <button id="btn-permiso" class="sec oculto" type="button">🔔 Activar notificaciones en este dispositivo</button>
+      <ul id="lista-avisos" class="lista"></ul>
+    </section>
+
+    <!-- ============ ADMIN ============ -->
+    <section id="vista-admin" class="vista oculto">
+      <div class="bloque">
+        <h2>Eventos pendientes de aprobación</h2>
+        <ul id="admin-pendientes" class="lista"></ul>
+      </div>
+      <div class="bloque">
+        <h2>Caminos fuera de servicio</h2>
+        <p class="ev-meta">Marca un ascensor, rampa o camino cerrado: todas las rutas lo evitan al instante.</p>
+        <ul id="admin-caminos" class="lista"></ul>
+      </div>
+    </section>
+  </aside>
+
+  <div id="modal" class="oculto" role="dialog" aria-modal="true">
+    <div class="modal-caja"><button id="modal-cerrar" class="sec chico" type="button">Cerrar</button><div id="modal-cuerpo"></div></div>
+  </div>
+  <div id="toast" role="status"></div>
+
+  <script src="lib/leaflet.js"></script>
+  <script src="qrcode.js"></script>
+  <script src="datos.js"></script>
+  <script src="ruteo.js"></script>
+  <script src="horario.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
